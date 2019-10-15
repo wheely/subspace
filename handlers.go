@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -402,6 +402,14 @@ func profileAddHandler(w *Web) {
 	if port := getEnv("SUBSPACE_LISTENPORT", "nil"); port != "nil" {
 		listenport = port
 	}
+	upstreamdns := "1.1.1.1"
+	if udns := getEnv("SUBSPACE_NAMESERVER_IPv4", "nil"); udns != "nil" {
+		upstreamdns = udns
+	}
+	upstreamdns6 := "2606:4700:4700::1111"
+	if udns6 := getEnv("SUBSPACE_NAMESERVER_IPv6", "nil"); udns6 != "nil" {
+		upstreamdns6 = udns6
+	}
 
 	script := `
 cd {{$.Datadir}}/wireguard
@@ -419,7 +427,7 @@ WGPEER
 cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
-DNS = {{$.IPv4Gw}}, {{$.IPv6Gw}}
+DNS = {{$.UpstreamDNS}}, {{$.UpstreamDNS6}}
 Address = {{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}},{{$.IPv6Pref}}{{$.Profile.Number}}/{{$.IPv6Cidr}}
 
 [Peer]
@@ -429,16 +437,18 @@ AllowedIPs = 0.0.0.0/0, ::/0
 WGCLIENT
 `
 	_, err = bash(script, struct {
-		Profile  Profile
-		Domain   string
-		Datadir string		
-		IPv4Gw   string
-		IPv6Gw   string
-		IPv4Pref string
-		IPv6Pref string
-		IPv4Cidr string
-    IPv6Cidr string
-		Listenport string
+		Profile      Profile
+		Domain       string
+		Datadir      string
+		IPv4Gw       string
+		IPv6Gw       string
+		IPv4Pref     string
+		IPv6Pref     string
+		IPv4Cidr     string
+		IPv6Cidr     string
+		Listenport   string
+		UpstreamDNS  string
+		UpstreamDNS6 string
 	}{
 		profile,
 		httpHost,
@@ -448,8 +458,10 @@ WGCLIENT
 		ipv4Pref,
 		ipv6Pref,
 		ipv4Cidr,
-    ipv6Cidr,
+		ipv6Cidr,
 		listenport,
+		upstreamdns,
+		upstreamdns6,
 	})
 	if err != nil {
 		logger.Warn(err)

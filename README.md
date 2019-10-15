@@ -140,17 +140,19 @@ docker create \
     --volume /data:/data \
     --env SUBSPACE_HTTP_HOST="subspace.example.com" \
 	# Optional variable to change upstream DNS provider
-    --env SUBSPACE_NAMESERVER="1.1.1.1" \
+    --env SUBSPACE_NAMESERVER_IPv4="1.1.1.1" \
+    --env SUBSPACE_NAMESERVER_IPv6="2606:4700:4700::1111" \
 	# Optional variable to change WireGuard Listenport
     --env SUBSPACE_LISTENPORT="51820" \
     # Optional variables to change IPv4/v6 prefixes
     --env SUBSPACE_IPV4_POOL="10.99.97.0/24" \
     --env SUBSPACE_IPV6_POOL="fd00::10:97:0/64" \
 	# Optional variables to change IPv4/v6 Gateway
-	--env SUBSPACE_IPV4_GW="10.99.97.1" \
+    --env SUBSPACE_IPV4_GW="10.99.97.1" \
     --env SUBSPACE_IPV6_GW="fd00::10:97:1" \
-	# Optional variable to enable or disable IPv6 NAT
+	# Optional variable to enable or disable IP NAT
     --env SUBSPACE_IPV6_NAT_ENABLED=1 \
+    --env SUBSPACE_IPV4_NAT_ENABLED=1 \
     subspacecloud/subspace:latest
 
 $ sudo docker start subspace
@@ -167,7 +169,7 @@ $ sudo docker logs subspace
 version: "3.3"
 services:
   subspace:
-   image: subspace/subspace:latest
+   image: grigorov/subspace:latest
    container_name: subspace
    volumes:
     - /usr/bin/wg:/usr/bin/wg
@@ -178,8 +180,10 @@ services:
     - SUBSPACE_LETSENCRYPT=true
     - SUBSPACE_HTTP_INSECURE=false
     - SUBSPACE_HTTP_ADDR=":80"
-    - SUBSPACE_NAMESERVER=1.1.1.1
+    - SUBSPACE_NAMESERVER_IPv4=1.1.1.1
     - SUBSPACE_LISTENPORT=51820
+    - SUBSPACE_IPV4_NAT_ENABLED=1
+    - SUBSPACE_IPV6_NAT_ENABLED=1
    cap_add:
     - NET_ADMIN
    network_mode: "host"
@@ -191,7 +195,7 @@ Pull the latest image, remove the container, and re-create the container as expl
 
 ```bash
 # Pull the latest image
-$ sudo docker pull subspacecloud/subspace
+$ sudo docker pull grigorov/subspace
 
 # Stop the container
 $ sudo docker stop subspace

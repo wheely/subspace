@@ -20,10 +20,12 @@ fi
 if [ -z "${SUBSPACE_IPV6_POOL-}" ] ; then
     export SUBSPACE_IPV6_POOL="fd00::10:97:0/112"
 fi
-if [ -z "${SUBSPACE_NAMESERVER-}" ] ; then
-    export SUBSPACE_NAMESERVER="1.1.1.1"
+if [ -z "${SUBSPACE_NAMESERVER_IPv4-}" ] ; then
+    export SUBSPACE_NAMESERVER_IPv4="1.1.1.1"
 fi
-
+if [ -z "${SUBSPACE_NAMESERVER_IPv6-}" ] ; then
+    export SUBSPACE_NAMESERVER_IPv6="2606:4700:4700::1111"
+fi
 if [ -z "${SUBSPACE_LETSENCRYPT-}" ] ; then
     export SUBSPACE_LETSENCRYPT="true"
 fi
@@ -57,7 +59,8 @@ if [ -z "${SUBSPACE_IPV6_NAT_ENABLED-}" ] ; then
 fi
 
 # Set DNS server
-echo "nameserver ${SUBSPACE_NAMESERVER}" >/etc/resolv.conf
+echo "nameserver ${SUBSPACE_NAMESERVER_IPv4}" >/etc/resolv.conf
+echo "nameserver ${SUBSPACE_NAMESERVER_IPv6}" >/etc/resolv.conf
 
 # ipv4
 if ! /sbin/iptables -t nat --check POSTROUTING -s ${SUBSPACE_IPV4_POOL} -j MASQUERADE ; then
@@ -140,38 +143,6 @@ export SUBSPACE_IPV6_CIDR=$(echo ${SUBSPACE_IPV6_POOL-} |cut -d '/' -f2)
 ip addr add ${SUBSPACE_IPV6_GW}/${SUBSPACE_IPV6_CIDR} dev wg0
 wg setconf wg0 /data/wireguard/server.conf
 ip link set wg0 up
-
-
-# dnsmasq service
-if ! test -d /etc/sv/dnsmasq ; then
-    cat <<DNSMASQ >/etc/dnsmasq.conf
-    # Only listen on necessary addresses.
-    listen-address=127.0.0.1,${SUBSPACE_IPV4_GW},${SUBSPACE_IPV6_GW}
-
-    # Never forward plain names (without a dot or domain part)
-    domain-needed
-
-    # Never forward addresses in the non-routed address spaces.
-    bogus-priv
-DNSMASQ
-
-    mkdir /etc/sv/dnsmasq
-    cat <<RUNIT >/etc/sv/dnsmasq/run
-#!/bin/sh
-exec /usr/sbin/dnsmasq --no-daemon
-RUNIT
-    chmod +x /etc/sv/dnsmasq/run
-
-# dnsmasq service log
-    mkdir /etc/sv/dnsmasq/log
-    mkdir /etc/sv/dnsmasq/log/main
-    cat <<RUNIT >/etc/sv/dnsmasq/log/run
-#!/bin/sh
-exec svlogd -tt ./main
-RUNIT
-    chmod +x /etc/sv/dnsmasq/log/run
-    ln -s /etc/sv/dnsmasq /etc/service/dnsmasq
-fi
 
 # subspace service
 if ! test -d /etc/sv/subspace ; then
