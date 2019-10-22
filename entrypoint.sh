@@ -57,22 +57,26 @@ fi
 if [ -z "${SUBSPACE_IPV6_NAT_ENABLED-}" ] ; then
     export SUBSPACE_IPV6_NAT_ENABLED=1
 fi
+if [ -z "${SUBSPACE_IPV4_NAT_ENABLED-}" ] ; then
+    export SUBSPACE_IPV4_NAT_ENABLED=1
+fi
 
 # Set DNS server
 echo "nameserver ${SUBSPACE_NAMESERVER_IPv4}" >/etc/resolv.conf
 echo "nameserver ${SUBSPACE_NAMESERVER_IPv6}" >/etc/resolv.conf
 
+if [[ ${SUBSPACE_IPV4_NAT_ENABLED-} -gt 0 ]]; then
 # ipv4
-if ! /sbin/iptables -t nat --check POSTROUTING -s ${SUBSPACE_IPV4_POOL} -j MASQUERADE ; then
-    /sbin/iptables -t nat --append POSTROUTING -s ${SUBSPACE_IPV4_POOL} -j MASQUERADE
+    if ! /sbin/iptables -t nat --check POSTROUTING -s ${SUBSPACE_IPV4_POOL} -j MASQUERADE ; then
+        /sbin/iptables -t nat --append POSTROUTING -s ${SUBSPACE_IPV4_POOL} -j MASQUERADE
+    fi
 fi
-
 if ! /sbin/iptables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT ; then
-    /sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+     /sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 fi
 
 if ! /sbin/iptables --check FORWARD -s ${SUBSPACE_IPV4_POOL} -j ACCEPT ; then
-    /sbin/iptables --append FORWARD -s ${SUBSPACE_IPV4_POOL} -j ACCEPT
+     /sbin/iptables --append FORWARD -s ${SUBSPACE_IPV4_POOL} -j ACCEPT
 fi
 
 if [[ ${SUBSPACE_IPV6_NAT_ENABLED-} -gt 0 ]]; then
@@ -80,16 +84,14 @@ if [[ ${SUBSPACE_IPV6_NAT_ENABLED-} -gt 0 ]]; then
 	if ! /sbin/ip6tables -t nat --check POSTROUTING -s ${SUBSPACE_IPV6_POOL} -j MASQUERADE ; then
 	    /sbin/ip6tables -t nat --append POSTROUTING -s ${SUBSPACE_IPV6_POOL} -j MASQUERADE
 	fi
-	
-	if ! /sbin/ip6tables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT ; then
-	    /sbin/ip6tables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-	fi
-	
-	if ! /sbin/ip6tables --check FORWARD -s ${SUBSPACE_IPV6_POOL} -j ACCEPT ; then
-	    /sbin/ip6tables --append FORWARD -s ${SUBSPACE_IPV6_POOL} -j ACCEPT
-	fi
+fi	
+if ! /sbin/ip6tables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT ; then
+    /sbin/ip6tables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 fi
-
+	
+if ! /sbin/ip6tables --check FORWARD -s ${SUBSPACE_IPV6_POOL} -j ACCEPT ; then
+    /sbin/ip6tables --append FORWARD -s ${SUBSPACE_IPV6_POOL} -j ACCEPT
+fi
 
 # ipv4 - DNS Leak Protection
 if ! /sbin/iptables -t nat --check OUTPUT -s ${SUBSPACE_IPV4_POOL} -p udp --dport 53 -j DNAT --to ${SUBSPACE_IPV4_GW}:53 ; then
