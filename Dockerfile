@@ -1,6 +1,4 @@
 FROM golang:1.13.1 AS builder
-MAINTAINER github.com/grigorov
-
 RUN apt-get update \
     && apt-get install -y git \
     && rm -rf /var/lib/apt/lists/*
@@ -28,7 +26,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o /usr/bin/subspace-linux-amd64
 
 FROM phusion/baseimage:0.11
-MAINTAINER github.com/grigorov
 
 COPY --from=builder /usr/bin/subspace-linux-amd64 /usr/bin/subspace
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
