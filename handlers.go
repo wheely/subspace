@@ -336,10 +336,15 @@ func profileAddHandler(w *Web) {
 
 	name := strings.TrimSpace(w.r.FormValue("name"))
 	platform := strings.TrimSpace(w.r.FormValue("platform"))
+	ipspeer := strings.TrimSpace(w.r.FormValue("ipspeer"))
+	allowedips := strings.TrimSpace(w.r.FormValue("allowedips"))
 	admin := w.r.FormValue("admin") == "yes"
 
 	if platform == "" {
 		platform = "other"
+	}
+	if ipspeer == "no" {
+		ipspeer = ""
 	}
 
 	if name == "" {
@@ -366,7 +371,7 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	profile, err := config.AddProfile(userID, name, platform)
+	profile, err := config.AddProfile(userID, name, platform, ipspeer, allowedips)
 	if err != nil {
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
@@ -416,12 +421,12 @@ cd {{$.Datadir}}/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128,{{$.Profile.IPsPeer}}
 
 cat <<WGPEER >peers/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
-AllowedIPs = {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+AllowedIPs = {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128,{{$.Profile.IPsPeer}}
 WGPEER
 
 cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
@@ -433,7 +438,7 @@ Address = {{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}},{{$.IPv6Pref}}{{$.Pr
 [Peer]
 PublicKey = $(cat server.public)
 Endpoint = {{$.Domain}}:{{$.Listenport}}
-AllowedIPs = 0.0.0.0/0, ::/0
+AllowedIPs = {{$.Profile.AllowedIPs}}
 WGCLIENT
 `
 	_, err = bash(script, struct {

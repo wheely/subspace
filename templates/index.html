@@ -65,6 +65,33 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="field">
+                                <div id="add-profile-admin" class="ui fluid selection dropdown">
+                                    <input type="hidden" name="ipspeer" value="no">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">Select Peer network</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="no"><i class="grey user icon"></i>No peer</div>
+                                        <div class="item" data-value="10.0.0.0/8"><i class="grey laptop icon"></i>dc0</div>
+                                        <div class="item" data-value="10.1.0.0/8"><i class="grey laptop icon"></i>dc1</div>
+                                        <div class="item" data-value="10.2.0.0/8"><i class="grey laptop icon"></i>dc2</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <div id="add-profile-admin" class="ui fluid selection dropdown">
+                                    <input type="hidden" name="allowedips" value="10.0.0.0/8">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">Select Network to vpn</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="10.0.0.0/8"><i class="grey user icon"></i>DC1</div>
+                                        <div class="item" data-value="10.1.0.0/8"><i class="grey user icon"></i>DC2</div>
+                                        <div class="item" data-value="10.2.0.0/8"><i class="grey user icon"></i>DC3</div>
+                                        <div class="item" data-value="10.0.0.0/8,10.1.0.0/8,10.2.0.0/8"><i class="grey user icon"></i>DC1+DC2+DC3</div>
+                                        <div class="item" data-value="0.0.0.0/0"><i class="grey laptop icon"></i>All</div>
+                                    </div>
+                                </div>
+                            </div>
                     {{end}}
                         <div class="field">
                             <div id="add-profile-platform" class="ui fluid selection dropdown">
