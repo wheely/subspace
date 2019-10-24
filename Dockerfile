@@ -1,4 +1,4 @@
-FROM golang:1.13.1 AS builder
+FROM golang:1.13.3 AS builder
 RUN apt-get update \
     && apt-get install -y git \
     && rm -rf /var/lib/apt/lists/*
@@ -35,7 +35,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN chmod +x /usr/bin/subspace /usr/local/bin/entrypoint.sh
 
 RUN apt-get update \
-    && apt-get install -y iproute2 iptables socat
+    && apt-get install -y iproute2 iptables socat && add-apt-repository -y ppa:wireguard/wireguard && apt install -y wireguard
 
 ENTRYPOINT [ "/usr/local/bin/entrypoint.sh" ]
 
