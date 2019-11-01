@@ -1,0 +1,21 @@
+version: "3.3"
+services:
+  subspace:
+   build: .
+   container_name: subspace
+   volumes:
+    - /usr/bin/wg:/usr/bin/wg
+    - /opt/docker/subspace:/data
+   restart: always
+   environment:
+    - SUBSPACE_HTTP_HOST=localhost
+    - SUBSPACE_LETSENCRYPT=false
+    - SUBSPACE_HTTP_INSECURE=true
+    - SUBSPACE_HTTP_ADDR=":80"
+    - SUBSPACE_NAMESERVER_IPv4=1.1.1.1
+    - SUBSPACE_LISTENPORT=51820
+    - SUBSPACE_IPV4_NAT_ENABLED=1
+    - SUBSPACE_IPV6_NAT_ENABLED=1
+   cap_add:
+    - NET_ADMIN
+   network_mode: "host"
