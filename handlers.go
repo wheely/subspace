@@ -344,7 +344,10 @@ func profileAddHandler(w *Web) {
 		platform = "other"
 	}
 	if ipspeer == "no" {
-		ipspeer = ""
+		ipspeer = "127.0.1.1/32"
+	}
+	if allowedips == "no" {
+		allowedips = "10.0.0.0/8"
 	}
 
 	if name == "" {
