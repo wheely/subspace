@@ -186,7 +186,6 @@ docker create \
     --restart always \
     --network host \
     --cap-add NET_ADMIN \
-    --volume /usr/bin/wg:/usr/bin/wg \
     --volume /data:/data \
     # Optional directory for mounting dnsmasq configurations
     --volume /etc/dnsmasq.d:/etc/dnsmasq.d \
