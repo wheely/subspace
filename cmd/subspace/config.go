@@ -37,12 +37,14 @@ type User struct {
 }
 
 type Profile struct {
-	ID       string    `json:"id"`
-	UserID   string    `json:"user"`
-	Name     string    `json:"name"`
-	Platform string    `json:"platform"`
-	Number   int       `json:"number"`
-	Created  time.Time `json:"created"`
+	ID         string    `json:"id"`
+	UserID     string    `json:"user"`
+	Name       string    `json:"name"`
+	Platform   string    `json:"platform"`
+	Number     int       `json:"number"`
+	Created    time.Time `json:"created"`
+	IPsPeer    string    `json:"ipspeer"`
+	AllowedIPs string    `json:"allowedips"`
 
 	User User `json:"-"`
 }
@@ -102,7 +104,7 @@ func NewConfig(filename string) (*Config, error) {
 	// Create new config with defaults
 	if os.IsNotExist(err) {
 		c.Info = &Info{
-			Email: "null",
+			Email:    "null",
 			HashKey:  RandomString(32),
 			BlockKey: RandomString(32),
 		}
@@ -208,7 +210,7 @@ func (c *Config) UpdateProfile(id string, fn func(*Profile) error) error {
 	return c.save()
 }
 
-func (c *Config) AddProfile(userID, name, platform string) (Profile, error) {
+func (c *Config) AddProfile(userID, name, platform string, ipspeer string, allowedips string) (Profile, error) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -221,12 +223,14 @@ func (c *Config) AddProfile(userID, name, platform string) (Profile, error) {
 		}
 	}
 	profile := Profile{
-		ID:       id,
-		UserID:   userID,
-		Name:     name,
-		Platform: platform,
-		Number:   number,
-		Created:  time.Now(),
+		ID:         id,
+		UserID:     userID,
+		Name:       name,
+		Platform:   platform,
+		Number:     number,
+		Created:    time.Now(),
+		IPsPeer:    ipspeer,
+		AllowedIPs: allowedips,
 	}
 	c.Profiles = append(c.Profiles, &profile)
 	return profile, c.save()

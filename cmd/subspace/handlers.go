@@ -19,10 +19,11 @@ import (
 )
 
 var (
-	validEmail    = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
-	validPassword = regexp.MustCompile(`^[ -~]{6,200}$`)
-	validString   = regexp.MustCompile(`^[ -~]{1,200}$`)
-	maxProfiles   = 250
+	validEmail         = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
+	validPassword      = regexp.MustCompile(`^[ -~]{6,200}$`)
+	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
+	maxProfiles        = 250
+	maxProfilesPerUser = 10
 )
 
 func getEnv(key, fallback string) string {
@@ -384,12 +385,19 @@ func profileAddHandler(w *Web) {
 
 	name := strings.TrimSpace(w.r.FormValue("name"))
 	platform := strings.TrimSpace(w.r.FormValue("platform"))
+	ipspeer := strings.TrimSpace(w.r.FormValue("ipspeer"))
+	allowedips := strings.TrimSpace(w.r.FormValue("allowedips"))
 	admin := w.r.FormValue("admin") == "yes"
 
 	if platform == "" {
 		platform = "other"
 	}
-
+	if ipspeer == "no" {
+		ipspeer = "127.0.1.1/32"
+	}
+	if allowedips == "no" {
+		allowedips = "10.0.0.0/16"
+	}
 	if name == "" {
 		w.Redirect("/?error=profilename")
 		return
@@ -406,8 +414,13 @@ func profileAddHandler(w *Web) {
 		w.Redirect("/?error=addprofile")
 		return
 	}
-
-	profile, err := config.AddProfile(userID, name, platform)
+	if !admin {
+		if len(config.ListProfilesByUser(userID)) >= maxProfilesPerUser {
+			w.Redirect("/?error=addprofile")
+			return
+		}
+	}
+	profile, err := config.AddProfile(userID, name, platform, ipspeer, allowedips)
 	if err != nil {
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
@@ -442,6 +455,10 @@ func profileAddHandler(w *Web) {
 	if port := getEnv("SUBSPACE_LISTENPORT", "nil"); port != "nil" {
 		listenport = port
 	}
+	upstreamdns := "1.1.1.1"
+	if udns := getEnv("SUBSPACE_NAMESERVER_IPv4", "nil"); udns != "nil" {
+		upstreamdns = udns
+	}
 	endpointHost := httpHost
 	if eh := getEnv("SUBSPACE_ENDPOINT_HOST", "nil"); eh != "nil" {
 		endpointHost = eh
@@ -449,6 +466,10 @@ func profileAddHandler(w *Web) {
 	allowedips := "0.0.0.0/0, ::/0"
 	if ips := getEnv("SUBSPACE_ALLOWED_IPS", "nil"); ips != "nil" {
 		allowedips = ips
+	}
+	upstreamdns6 := "2606:4700:4700::1111"
+	if udns6 := getEnv("SUBSPACE_NAMESERVER_IPv6", "nil"); udns6 != "nil" {
+		upstreamdns6 = udns6
 	}
 	ipv4Enabled := true
 	if enable := getEnv("SUBSPACE_IPV4_NAT_ENABLED", "1"); enable == "0" {
@@ -480,7 +501,7 @@ cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
 {{- if not .DisableDNS }}
-DNS = {{if .Ipv4Enabled}}{{$.IPv4Gw}}{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Gw}}{{end}}
+DNS = {{if .Ipv4Enabled}}{{$.UpstreamDNS}}{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.UpstreamDNS6}}{{end}}
 {{- end }}
 Address = {{if .Ipv4Enabled}}{{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}}{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Pref}}{{$.Profile.Number}}/{{$.IPv6Cidr}}{{end}}
 
@@ -502,6 +523,8 @@ WGCLIENT
 		IPv4Cidr     string
 		IPv6Cidr     string
 		Listenport   string
+		UpstreamDNS  string
+		UpstreamDNS6 string
 		AllowedIPS   string
 		Ipv4Enabled  bool
 		Ipv6Enabled  bool
@@ -517,6 +540,8 @@ WGCLIENT
 		ipv4Cidr,
 		ipv6Cidr,
 		listenport,
+		upstreamdns,
+		upstreamdns6,
 		allowedips,
 		ipv4Enabled,
 		ipv6Enabled,
