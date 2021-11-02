@@ -22,7 +22,7 @@ var (
 	validEmail         = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
 	validPassword      = regexp.MustCompile(`^[ -~]{6,200}$`)
 	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
-	maxProfiles        = 250
+//	maxProfiles        = 250
 	maxProfilesPerUser = 10
 )
 
@@ -410,7 +410,9 @@ func profileAddHandler(w *Web) {
 		userID = w.User.ID
 	}
 
-	if len(config.ListProfiles()) >= maxProfiles {
+	//if len(config.ListProfiles()) >= maxProfiles {
+	// Check whether there is a room to assign new IP address or not.
+	if _, _, err := wgConfig.generateIPAddr(uint32(len(config.ListProfiles()))); err != nil {
 		w.Redirect("/?error=addprofile")
 		return
 	}
@@ -427,29 +429,13 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	ipv4Pref := "10.99.97."
-	if pref := getEnv("SUBSPACE_IPV4_PREF", "nil"); pref != "nil" {
-		ipv4Pref = pref
-	}
 	ipv4Gw := "10.99.97.1"
 	if gw := getEnv("SUBSPACE_IPV4_GW", "nil"); gw != "nil" {
 		ipv4Gw = gw
 	}
-	ipv4Cidr := "24"
-	if cidr := getEnv("SUBSPACE_IPV4_CIDR", "nil"); cidr != "nil" {
-		ipv4Cidr = cidr
-	}
-	ipv6Pref := "fd00::10:97:"
-	if pref := getEnv("SUBSPACE_IPV6_PREF", "nil"); pref != "nil" {
-		ipv6Pref = pref
-	}
 	ipv6Gw := "fd00::10:97:1"
 	if gw := getEnv("SUBSPACE_IPV6_GW", "nil"); gw != "nil" {
 		ipv6Gw = gw
-	}
-	ipv6Cidr := "64"
-	if cidr := getEnv("SUBSPACE_IPV6_CIDR", "nil"); cidr != "nil" {
-		ipv6Cidr = cidr
 	}
 	listenport := "51820"
 	if port := getEnv("SUBSPACE_LISTENPORT", "nil"); port != "nil" {
@@ -483,18 +469,27 @@ func profileAddHandler(w *Web) {
 	if shouldDisableDNS := getEnv("SUBSPACE_DISABLE_DNS", "0"); shouldDisableDNS == "1" {
 		disableDNS = true
 	}
-
+	ipv4Addr, ipv6Addr, err := wgConfig.generateIPAddr(uint32(profile.Number))
+	if err != nil {
+		logger.Errorf("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
+		w.Redirect("/?error=addprofile")
+		return
+	}
+	ipv4Gw = wgConfig.gatewayIPv4.String()
+	ipv6Gw = wgConfig.gatewayIPv6.String()
+	ipv4CIDR := wgConfig.networkIPv4.String()
+	ipv6CIDR := wgConfig.networkIPv4.String()
 	script := `
 cd {{$.Datadir}}/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-wg set wg0 peer ${wg_public_key} allowed-ips {{if .Ipv4Enabled}}{{$.IPv4Pref}}{{$.Profile.Number}}/32{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Pref}}{{$.Profile.Number}}/128{{end}}
+wg set wg0 peer ${wg_public_key} allowed-ips {{if .Ipv4Enabled}}{{$.IPv4Addr}}/32{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Addr}}/128{{end}}
 
 cat <<WGPEER >peers/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
-AllowedIPs = {{if .Ipv4Enabled}}{{$.IPv4Pref}}{{$.Profile.Number}}/32{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Pref}}{{$.Profile.Number}}/128{{end}}
+AllowedIPs = {{if .Ipv4Enabled}}{{$.IPv4Addr}}/32{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Addr}}/128{{end}}
 WGPEER
 
 cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
@@ -503,7 +498,7 @@ PrivateKey = ${wg_private_key}
 {{- if not .DisableDNS }}
 DNS = {{if .Ipv4Enabled}}{{$.UpstreamDNS}}{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.UpstreamDNS6}}{{end}}
 {{- end }}
-Address = {{if .Ipv4Enabled}}{{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}}{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Pref}}{{$.Profile.Number}}/{{$.IPv6Cidr}}{{end}}
+Address = {{if .Ipv4Enabled}}{{$.IPv4Addr}}/32{{end}}{{if .Ipv6Enabled}}{{if .Ipv4Enabled}},{{end}}{{$.IPv6Addr}}/128{{end}}
 
 [Peer]
 PublicKey = $(cat server.public)
@@ -518,8 +513,8 @@ WGCLIENT
 		Datadir      string
 		IPv4Gw       string
 		IPv6Gw       string
-		IPv4Pref     string
-		IPv6Pref     string
+		IPv4Addr     string
+		IPv6Addr     string
 		IPv4Cidr     string
 		IPv6Cidr     string
 		Listenport   string
@@ -535,10 +530,10 @@ WGCLIENT
 		datadir,
 		ipv4Gw,
 		ipv6Gw,
-		ipv4Pref,
-		ipv6Pref,
-		ipv4Cidr,
-		ipv6Cidr,
+		ipv4Addr.String(),
+		ipv6Addr.String(),
+		ipv4CIDR,
+		ipv6CIDR,
 		listenport,
 		upstreamdns,
 		upstreamdns6,
