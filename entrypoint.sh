@@ -15,10 +15,10 @@ if [ -z "${SUBSPACE_BACKLINK-}" ]; then
 fi
 
 if [ -z "${SUBSPACE_IPV4_POOL-}" ]; then
-  export SUBSPACE_IPV4_POOL="10.99.97.0/24"
+  export SUBSPACE_IPV4_POOL="10.99.97.0/23"
 fi
 if [ -z "${SUBSPACE_IPV6_POOL-}" ]; then
-  export SUBSPACE_IPV6_POOL="fd00::10:97:0/112"
+  export SUBSPACE_IPV6_POOL="fd00::10:97:0/64"
 fi
 if [ -z "${SUBSPACE_NAMESERVER_IPv4-}" ] ; then
   export SUBSPACE_NAMESERVER_IPv4="1.1.1.1"
@@ -243,6 +243,8 @@ exec /usr/bin/subspace \
     "--http-insecure=${SUBSPACE_HTTP_INSECURE}" \
     "--backlink=${SUBSPACE_BACKLINK}" \
     "--letsencrypt=${SUBSPACE_LETSENCRYPT}" \
+    "--network-ipv4=${SUBSPACE_IPV4_POOL}" \
+    "--network-ipv6=${SUBSPACE_IPV6_POOL}" \
     "--theme=${SUBSPACE_THEME}"
 RUNIT
   chmod +x /etc/service/subspace/run
@@ -257,4 +259,4 @@ RUNIT
   chmod +x /etc/service/subspace/log/run
 fi
 
-exec $@
+exec "$@"

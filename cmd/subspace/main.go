@@ -83,6 +83,10 @@ var (
 
 	// Totp
 	tempTotpKey *otp.Key
+	// IPV4 CIDR
+	networkIPv4 string
+	// IPV6 CIDR
+	networkIPv6 string
 )
 
 func init() {
@@ -90,6 +94,8 @@ func init() {
 	cli.StringVar(&backlink, "backlink", "/", "backlink (optional)")
 	cli.StringVar(&httpHost, "http-host", "", "HTTP host")
 	cli.StringVar(&httpAddr, "http-addr", ":80", "HTTP listen address")
+	cli.StringVar(&networkIPv4, "network-ipv4", "10.99.97.0/23", "IPV4 network address to create. First one is reserved by server.")
+	cli.StringVar(&networkIPv6, "network-ipv6", "fd00::10:97:0/64", "IPV6 network address to create. First one is reserved by server.")
 	cli.BoolVar(&httpInsecure, "http-insecure", false, "enable sessions cookies for http (no https) not recommended")
 	cli.BoolVar(&letsencrypt, "letsencrypt", true, "enable TLS using Let's Encrypt on port 443")
 	cli.BoolVar(&showVersion, "version", false, "display version and exit")
@@ -153,7 +159,9 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
-
+	if err := initWireguardConfig(); err != nil {
+		logger.Fatal(err)
+	}
 	// Secure token
 	securetoken = securecookie.New([]byte(config.FindInfo().HashKey), []byte(config.FindInfo().BlockKey))
 
