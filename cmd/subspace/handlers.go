@@ -22,8 +22,7 @@ var (
 	validEmail         = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
 	validPassword      = regexp.MustCompile(`^[ -~]{6,200}$`)
 	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
-//	maxProfiles        = 250
-	maxProfilesPerUser = 10
+	maxProfilesPerUser = 4
 )
 
 func getEnv(key, fallback string) string {
