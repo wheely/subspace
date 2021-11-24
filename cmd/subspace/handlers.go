@@ -428,7 +428,7 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-	ipv4Gw := "10.99.97.1"
+	ipv4Gw := "10.99.80.1"
 	if gw := getEnv("SUBSPACE_IPV4_GW", "nil"); gw != "nil" {
 		ipv4Gw = gw
 	}

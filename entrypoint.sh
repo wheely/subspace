@@ -15,7 +15,7 @@ if [ -z "${SUBSPACE_BACKLINK-}" ]; then
 fi
 
 if [ -z "${SUBSPACE_IPV4_POOL-}" ]; then
-  export SUBSPACE_IPV4_POOL="10.99.97.0/23"
+  export SUBSPACE_IPV4_POOL="10.99.80.0/20"
 fi
 if [ -z "${SUBSPACE_IPV6_POOL-}" ]; then
   export SUBSPACE_IPV6_POOL="fd00::10:97:0/64"
