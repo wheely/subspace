@@ -210,18 +210,12 @@ func (c *Config) UpdateProfile(id string, fn func(*Profile) error) error {
 	return c.save()
 }
 
-func (c *Config) AddProfile(userID, name, platform string, ipspeer string, allowedips string) (Profile, error) {
+func (c *Config) AddProfile(number int, userID, name, platform, ipspeer, allowedips string) (Profile, error) {
 	c.Lock()
 	defer c.Unlock()
 
 	id := RandomString(16)
 
-	number := 2 // MUST start at 2
-	for _, p := range c.Profiles {
-		if p.Number >= number {
-			number = p.Number + 1
-		}
-	}
 	profile := Profile{
 		ID:         id,
 		UserID:     userID,

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/crewjam/saml/samlsp"
@@ -412,7 +413,8 @@ func profileAddHandler(w *Web) {
 
 	//if len(config.ListProfiles()) >= maxProfiles {
 	// Check whether there is a room to assign new IP address or not.
-	if _, _, err := wgConfig.generateIPAddr(uint32(len(config.ListProfiles()))); err != nil {
+	firstFreeID := FindFirstFreeID(config.Profiles)
+	if _, _, err := wgConfig.generateIPAddr(firstFreeID); err != nil {
 		w.Redirect("/?error=addprofile")
 		return
 	}
@@ -422,7 +424,7 @@ func profileAddHandler(w *Web) {
 			return
 		}
 	}
-	profile, err := config.AddProfile(userID, name, platform, ipspeer, allowedips)
+	profile, err := config.AddProfile(int(firstFreeID), userID, name, platform, ipspeer, allowedips)
 	if err != nil {
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
