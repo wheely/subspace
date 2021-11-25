@@ -215,19 +215,14 @@ func (c *Config) AddProfile(userID, name, platform string, ipspeer string, allow
 	defer c.Unlock()
 
 	id := RandomString(16)
+	number := FindFirstFreeID(c.ListProfiles())
 
-	number := 2 // MUST start at 2
-	for _, p := range c.Profiles {
-		if p.Number >= number {
-			number = p.Number + 1
-		}
-	}
 	profile := Profile{
 		ID:         id,
 		UserID:     userID,
 		Name:       name,
 		Platform:   platform,
-		Number:     number,
+		Number:     int(number),
 		Created:    time.Now(),
 		IPsPeer:    ipspeer,
 		AllowedIPs: allowedips,

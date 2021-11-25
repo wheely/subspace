@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"text/template"
 	"time"
 )
@@ -67,4 +68,35 @@ set -o xtrace
 		return string(output), fmt.Errorf("command failed: %s\n%s", err, string(output))
 	}
 	return string(output), nil
+}
+
+func FindFirstFreeID(profiles []Profile) (freeID uint32) {
+	profileIDs := getProfileIDs(profiles)
+	sort.Slice(profileIDs, func(i, j int) bool {
+		return profileIDs[i] < profileIDs[j]
+	})
+
+	const minID = 2
+	if len(profileIDs) == 0 {
+		return minID
+	}
+	maxID := profileIDs[len(profileIDs)-1]
+	freeID = uint32(maxID + 1)
+	for i := minID; i < maxID; i++ {
+		if i != profileIDs[i-minID] {
+			freeID = uint32(i)
+			break
+		}
+	}
+
+	return
+}
+
+func getProfileIDs(profiles []Profile) []int {
+	var profileIDs = make([]int, len(profiles))
+	for _, profile := range config.ListProfiles() {
+		profileIDs = append(profileIDs, profile.Number)
+	}
+
+	return profileIDs
 }

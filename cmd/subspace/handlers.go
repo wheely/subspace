@@ -411,7 +411,7 @@ func profileAddHandler(w *Web) {
 
 	//if len(config.ListProfiles()) >= maxProfiles {
 	// Check whether there is a room to assign new IP address or not.
-	if _, _, err := wgConfig.generateIPAddr(uint32(len(config.ListProfiles()))); err != nil {
+	if _, _, err := wgConfig.generateIPAddr(FindFirstFreeID(config.ListProfiles())); err != nil {
 		w.Redirect("/?error=addprofile")
 		return
 	}
