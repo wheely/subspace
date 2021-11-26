@@ -210,24 +210,19 @@ func (c *Config) UpdateProfile(id string, fn func(*Profile) error) error {
 	return c.save()
 }
 
-func (c *Config) AddProfile(userID, name, platform string, ipspeer string, allowedips string) (Profile, error) {
+func (c *Config) AddProfile(number int, userID, name, platform, ipspeer, allowedips string) (Profile, error) {
 	c.Lock()
 	defer c.Unlock()
 
 	id := RandomString(16)
-
-	number := 2 // MUST start at 2
-	for _, p := range c.Profiles {
-		if p.Number >= number {
-			number = p.Number + 1
-		}
-	}
+	logger.Debugf("ID Profile: %v", id)
+	logger.Debugf("Number: %v", number)
 	profile := Profile{
 		ID:         id,
 		UserID:     userID,
 		Name:       name,
 		Platform:   platform,
-		Number:     number,
+		Number:     int(number),
 		Created:    time.Now(),
 		IPsPeer:    ipspeer,
 		AllowedIPs: allowedips,
@@ -281,12 +276,14 @@ func (c *Config) ListProfiles() (profiles []Profile) {
 	for _, p := range c.listProfiles() {
 		profiles = append(profiles, *p)
 	}
+	logger.Debugf("ListProfiles - profiles: %v", profiles)
 	return
 }
 
 func (c *Config) listProfiles() (profiles []*Profile) {
 	profiles = append(profiles, c.Profiles...)
 	sort.Slice(profiles, func(i, j int) bool { return profiles[i].Created.After(profiles[j].Created) })
+	logger.Debugf("listProfiles - sort-profiles: %v", profiles)
 	return
 }
 

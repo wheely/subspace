@@ -22,8 +22,7 @@ var (
 	validEmail         = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
 	validPassword      = regexp.MustCompile(`^[ -~]{6,200}$`)
 	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
-//	maxProfiles        = 250
-	maxProfilesPerUser = 10
+	maxProfilesPerUser = 4
 )
 
 func getEnv(key, fallback string) string {
@@ -412,24 +411,28 @@ func profileAddHandler(w *Web) {
 
 	//if len(config.ListProfiles()) >= maxProfiles {
 	// Check whether there is a room to assign new IP address or not.
-	if _, _, err := wgConfig.generateIPAddr(uint32(len(config.ListProfiles()))); err != nil {
+	firstFreeID := FindFirstFreeID(config.Profiles)
+	logger.Debugf("firstFreeID for generateIPAddr: %v", firstFreeID)
+	if _, _, err := wgConfig.generateIPAddr(firstFreeID); err != nil {
 		w.Redirect("/?error=addprofile")
 		return
 	}
 	if !admin {
+		logger.Debugf("You not admin!!!")
 		if len(config.ListProfilesByUser(userID)) >= maxProfilesPerUser {
 			w.Redirect("/?error=addprofile")
 			return
 		}
 	}
-	profile, err := config.AddProfile(userID, name, platform, ipspeer, allowedips)
+	profile, err := config.AddProfile(int(firstFreeID), userID, name, platform, ipspeer, allowedips)
 	if err != nil {
+		logger.Debugf("Error add Profile: %v", err)
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
 		return
 	}
 
-	ipv4Gw := "10.99.97.1"
+	ipv4Gw := "10.99.80.1"
 	if gw := getEnv("SUBSPACE_IPV4_GW", "nil"); gw != "nil" {
 		ipv4Gw = gw
 	}
@@ -469,7 +472,7 @@ func profileAddHandler(w *Web) {
 	if shouldDisableDNS := getEnv("SUBSPACE_DISABLE_DNS", "0"); shouldDisableDNS == "1" {
 		disableDNS = true
 	}
-	ipv4Addr, ipv6Addr, err := wgConfig.generateIPAddr(uint32(profile.Number))
+	ipv4Addr, ipv6Addr, err := wgConfig.generateIPAddr(uint32(profile.Number)) // wgConfig.generateIPAddr(FindFirstFreeID(config.Profiles))
 	if err != nil {
 		logger.Errorf("Failed to generate IP addres for Profile %s: %v", profile.ID, err)
 		w.Redirect("/?error=addprofile")
@@ -543,6 +546,7 @@ WGCLIENT
 		disableDNS,
 	})
 	if err != nil {
+		logger.Debugf("Error bash execute, see /tmp/error.txt")
 		logger.Warn(err)
 		f, _ := os.Create("/tmp/error.txt")
 		errstr := fmt.Sprintln(err)
