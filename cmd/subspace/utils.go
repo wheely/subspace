@@ -70,33 +70,39 @@ set -o xtrace
 	return string(output), nil
 }
 
-func FindFirstFreeID(profiles []Profile) (freeID uint32) {
+func FindFirstFreeID(profiles []*Profile) (freeID uint32) {
 	profileIDs := getProfileIDs(profiles)
+	logger.Debugf("profileIDS: %v", profileIDs)
 	sort.Slice(profileIDs, func(i, j int) bool {
 		return profileIDs[i] < profileIDs[j]
 	})
-
+	logger.Debugf("Sorted profileIDS: %v", profileIDs)
 	const minID = 2
 	if len(profileIDs) == 0 {
 		return minID
 	}
+	logger.Debugf("minID: %v", minID)
 	maxID := profileIDs[len(profileIDs)-1]
+	logger.Debugf("maxID: %v", maxID)
 	freeID = uint32(maxID + 1)
+	logger.Debugf("freeID: %v", freeID)
 	for i := minID; i < maxID; i++ {
 		if i != profileIDs[i-minID] {
 			freeID = uint32(i)
 			break
 		}
 	}
-
+	logger.Debugf("Return freeID: %v", freeID)
 	return
 }
 
-func getProfileIDs(profiles []Profile) []int {
+func getProfileIDs(profiles []*Profile) []int {
 	var profileIDs = make([]int, len(profiles))
-	for _, profile := range config.ListProfiles() {
-		profileIDs = append(profileIDs, profile.Number)
+	logger.Debugf("Profiles - params: %v", profiles)
+	logger.Debugf("make profileIDS: %v", profileIDs)
+	for i, profile := range profiles {
+		profileIDs[i] = profile.Number
 	}
-
+	logger.Debugf("return profileIDS: %v", profileIDs)
 	return profileIDs
 }
