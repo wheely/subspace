@@ -3,6 +3,7 @@
 
 BINDATA=${GOPATH}/bin/go-bindata
 BUILD_VERSION?=unknown
+IMAGE := public.ecr.aws/p0g1j7l8/subspace:2022050501
 
 
 help:  ## Display this help message and exit
@@ -26,3 +27,9 @@ bindata.go: $(BINDATA)
 $(BINDATA):
 	go get github.com/kevinburke/go-bindata/go-bindata
 
+# aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/p0g1j7l8
+docker.build:
+	docker build -t $(IMAGE) .
+
+docker.push:
+	docker push $(IMAGE)

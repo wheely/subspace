@@ -395,7 +395,7 @@ func profileAddHandler(w *Web) {
 		ipspeer = "127.0.1.1/32"
 	}
 	if allowedips == "no" {
-		allowedips = "10.0.0.0/16"
+		allowedips = "10.0.0.0/16,10.2.0.0/16,10.3.0.0/16,10.4.0.0/16,192.168.160.0/24,192.168.178.0/23,192.168.78.0/24,10.233.0.0/18"
 	}
 	if name == "" {
 		w.Redirect("/?error=profilename")
