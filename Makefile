@@ -24,5 +24,5 @@ bindata.go: $(BINDATA)
 	@echo "+++ bindata.go created"
 
 $(BINDATA):
-	go get github.com/kevinburke/go-bindata/go-bindata
+	go get github.com/kevinburke/go-bindata/go-bindata@v3.24.0
 
