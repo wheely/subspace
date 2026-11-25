@@ -25,7 +25,7 @@ bindata.go: $(BINDATA)
 	@echo "+++ bindata.go created"
 
 $(BINDATA):
-	go get github.com/kevinburke/go-bindata/go-bindata
+	go get github.com/kevinburke/go-bindata/go-bindata@v3.24.0
 
 # aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/p0g1j7l8
 docker.build:
